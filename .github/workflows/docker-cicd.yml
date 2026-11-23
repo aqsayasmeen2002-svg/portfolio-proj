@@ -1,0 +1,32 @@
+
+name: Docker CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        run: |
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Build Docker Image
+        run: docker build -t aqsayasmin728/portfolio-app:latest .
+
+      - name: Push Image to Docker Hub
+        run: docker push aqsayasmin728/portfolio-app:latest
+
+      - name: Deploy Container
+        run: |
+          docker stop portfolio-deploy-container || true
+          docker rm portfolio-deploy-container || true
+          docker pull aqsayasmin728/portfolio-app:latest
+          docker run -d -p 8082:80 --name portfolio-deploy-container aqsayasmin728/portfolio-app:latest
